@@ -11,6 +11,7 @@ COPY . .
 RUN npx prisma generate && npm run build
 
 FROM node:20-alpine AS runner
+RUN apk add --no-cache openssl1.1-compat
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=builder /app/dist ./dist
