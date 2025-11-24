@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async register(dto: RegisterDto) {
     const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
@@ -24,10 +24,10 @@ export class UsersService {
     const ok = await bcrypt.compare(dto.password, user.password);
     if (!ok) throw new UnauthorizedException("Invalid credentials");
 
-    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET || "dev-secret", {
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, process.env.JWT_SECRET || "dev-secret", {
       expiresIn: process.env.JWT_EXPIRES_IN || "7d"
     });
-    return { token };
+    return { token, user: { id: user.id, email: user.email, name: user.name, role: user.role } };
   }
 
   async me(token?: string) {
@@ -36,7 +36,7 @@ export class UsersService {
       const payload = jwt.verify(token, process.env.JWT_SECRET || "dev-secret") as { id: string; email: string };
       const user = await this.prisma.user.findUnique({ where: { id: payload.id } });
       if (!user) throw new UnauthorizedException();
-      return { id: user.id, email: user.email, name: user.name };
+      return { id: user.id, email: user.email, name: user.name, role: user.role };
     } catch {
       throw new UnauthorizedException();
     }
